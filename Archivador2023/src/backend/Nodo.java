@@ -18,8 +18,6 @@ public class Nodo implements NodoI {
         this.hermano = null;
         this.hijo = null;
     }
-    
-    
 
     @Override
     public NodoI getHijo() {
@@ -50,5 +48,4 @@ public class Nodo implements NodoI {
     public void setData(File data) {
         this.data = data;
     }
-    
 }

@@ -5,8 +5,19 @@
 package frontend;
 
 import backend.ArbolI;
+import backend.Carpeta;
+import backend.Documento;
 import backend.File;
+import backend.FileType;
+import backend.NodoI;
+import backend.PopUpListener;
+import backend.SistemReturn;
+import backend.Sistema;
 import backend.SistemaI;
+import backend.TypeError;
+import java.awt.Font;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
@@ -15,16 +26,26 @@ import javax.swing.tree.DefaultTreeModel;
  *
  * @author ezeco
  */
-public class Principal extends javax.swing.JFrame {
+public class Principal extends javax.swing.JFrame implements PopUpListener {
 
     private SistemaI sistema;
+    private int idNodoSeleccionado = 0;
+    private NodoI nodoCortado = null;
+    private NodoI nodoCopiado = null;
 
     /**
      * Creates new form Principal
      */
     public Principal() {
         initComponents();
+        sistema = new Sistema();
+        ArbolI directorio = (ArbolI) this.sistema.getDirectorio().result;
+        this.populateTree(directorio);
+        String tamañoTexto = this.sistema.sizeOcuped().result.toString() + "/" + this.sistema.getTotalSize().result.toString();
+        this.jLabel1.setText(tamañoTexto);
         
+        String cantidadTexto = String.valueOf(directorio.cantidadDeElementos(1));
+        this.jLCantidadData.setText(cantidadTexto);
     }
 
     private void populateTable(Object[][] data) {
@@ -130,21 +151,51 @@ public class Principal extends javax.swing.JFrame {
         jLAdd.setForeground(new java.awt.Color(255, 255, 255));
         jLAdd.setIcon(new javax.swing.ImageIcon(getClass().getResource("/imagenes/Add.png"))); // NOI18N
         jLAdd.setText("Nuevo ");
+        jLAdd.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jLAddMouseClicked(evt);
+            }
+        });
         jPTopOptions.add(jLAdd, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, 70, -1));
 
         jLCut.setIcon(new javax.swing.ImageIcon(getClass().getResource("/imagenes/Scissors.png"))); // NOI18N
+        jLCut.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jLCutMouseClicked(evt);
+            }
+        });
         jPTopOptions.add(jLCut, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 10, -1, -1));
 
         jLPaste.setIcon(new javax.swing.ImageIcon(getClass().getResource("/imagenes/Paste.png"))); // NOI18N
+        jLPaste.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jLPasteMouseClicked(evt);
+            }
+        });
         jPTopOptions.add(jLPaste, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 10, -1, -1));
 
         jLCopy.setIcon(new javax.swing.ImageIcon(getClass().getResource("/imagenes/Copy.png"))); // NOI18N
+        jLCopy.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jLCopyMouseClicked(evt);
+            }
+        });
         jPTopOptions.add(jLCopy, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 10, -1, -1));
 
         jLRename.setIcon(new javax.swing.ImageIcon(getClass().getResource("/imagenes/Rename.png"))); // NOI18N
+        jLRename.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jLRenameMouseClicked(evt);
+            }
+        });
         jPTopOptions.add(jLRename, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 10, -1, -1));
 
         jLTrash.setIcon(new javax.swing.ImageIcon(getClass().getResource("/imagenes/Trash.png"))); // NOI18N
+        jLTrash.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jLTrashMouseClicked(evt);
+            }
+        });
         jPTopOptions.add(jLTrash, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 10, -1, -1));
 
         jPBack.add(jPTopOptions, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 90, 990, 40));
@@ -166,111 +217,126 @@ public class Principal extends javax.swing.JFrame {
 
         jLUPdate.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLUPdate.setIcon(new javax.swing.ImageIcon(getClass().getResource("/imagenes/Restart.png"))); // NOI18N
+        jLUPdate.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jLUPdateMouseClicked(evt);
+            }
+        });
         jPTopNav.add(jLUPdate, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 10, -1, -1));
 
         jTFRuta.setFont(new java.awt.Font("Roboto", 0, 12)); // NOI18N
-        jTFRuta.setText("C:\\");
-            jPTopNav.add(jTFRuta, new org.netbeans.lib.awtextra.AbsoluteConstraints(160, 10, 600, 20));
+        jTFRuta.setText("C:/");
+        jPTopNav.add(jTFRuta, new org.netbeans.lib.awtextra.AbsoluteConstraints(160, 10, 600, 20));
 
-            jTFBuscar.setFont(new java.awt.Font("Roboto", 0, 12)); // NOI18N
-            jTFBuscar.setText("Buscar ...");
-            jTFBuscar.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
-            jTFBuscar.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jTFBuscarActionPerformed(evt);
-                }
-            });
-            jPTopNav.add(jTFBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(770, 11, 190, 20));
+        jTFBuscar.setFont(new java.awt.Font("Roboto", 0, 12)); // NOI18N
+        jTFBuscar.setText("Buscar ...");
+        jTFBuscar.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        jTFBuscar.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jTFBuscarMouseClicked(evt);
+            }
+        });
+        jTFBuscar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTFBuscarActionPerformed(evt);
+            }
+        });
+        jPTopNav.add(jTFBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(770, 11, 190, 20));
 
-            jLBuscar.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-            jLBuscar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/imagenes/Search.png"))); // NOI18N
-            jPTopNav.add(jLBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(960, 10, -1, -1));
+        jLBuscar.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLBuscar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/imagenes/Search.png"))); // NOI18N
+        jLBuscar.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jLBuscarMouseClicked(evt);
+            }
+        });
+        jPTopNav.add(jLBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(960, 10, -1, -1));
 
-            jPBack.add(jPTopNav, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 50, 990, 40));
+        jPBack.add(jPTopNav, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 50, 990, 40));
 
-            jPContent.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jPContent.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-            jTable1.setFont(new java.awt.Font("Roboto", 0, 12)); // NOI18N
-            jTable1.setModel(new javax.swing.table.DefaultTableModel(
-                new Object [][] {
+        jTable1.setFont(new java.awt.Font("Roboto", 0, 12)); // NOI18N
+        jTable1.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
 
-                },
-                new String [] {
-                    "Nombre", "Tipo", "Tamaño", "Ruta"
-                }
-            ) {
-                Class[] types = new Class [] {
-                    java.lang.String.class, java.lang.String.class, java.lang.Integer.class, java.lang.String.class
-                };
-                boolean[] canEdit = new boolean [] {
-                    true, false, false, false
-                };
+            },
+            new String [] {
+                "Nombre", "Tipo", "Tamaño", "Ruta"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class, java.lang.String.class, java.lang.Integer.class, java.lang.String.class
+            };
+            boolean[] canEdit = new boolean [] {
+                true, false, false, false
+            };
 
-                public Class getColumnClass(int columnIndex) {
-                    return types [columnIndex];
-                }
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
 
-                public boolean isCellEditable(int rowIndex, int columnIndex) {
-                    return canEdit [columnIndex];
-                }
-            });
-            jScrollPane2.setViewportView(jTable1);
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        jScrollPane2.setViewportView(jTable1);
 
-            jPContent.add(jScrollPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 650, 530));
+        jPContent.add(jScrollPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 650, 530));
 
-            jPBack.add(jPContent, new org.netbeans.lib.awtextra.AbsoluteConstraints(330, 130, 660, 530));
+        jPBack.add(jPContent, new org.netbeans.lib.awtextra.AbsoluteConstraints(330, 130, 660, 530));
 
-            jPBotomInfo.setBackground(new java.awt.Color(102, 0, 204));
-            jPBotomInfo.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jPBotomInfo.setBackground(new java.awt.Color(102, 0, 204));
+        jPBotomInfo.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-            jLCantidad.setFont(new java.awt.Font("Roboto Medium", 0, 12)); // NOI18N
-            jLCantidad.setForeground(new java.awt.Color(255, 255, 255));
-            jLCantidad.setText("Cantidad :");
-            jLCantidad.setMaximumSize(new java.awt.Dimension(100, 15));
-            jPBotomInfo.add(jLCantidad, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 60, 30));
+        jLCantidad.setFont(new java.awt.Font("Roboto Medium", 0, 12)); // NOI18N
+        jLCantidad.setForeground(new java.awt.Color(255, 255, 255));
+        jLCantidad.setText("Cantidad :");
+        jLCantidad.setMaximumSize(new java.awt.Dimension(100, 15));
+        jPBotomInfo.add(jLCantidad, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 60, 30));
 
-            jLSize.setFont(new java.awt.Font("Roboto Medium", 0, 12)); // NOI18N
-            jLSize.setForeground(new java.awt.Color(255, 255, 255));
-            jLSize.setText("Tamaño");
-            jLSize.setMaximumSize(new java.awt.Dimension(100, 15));
-            jPBotomInfo.add(jLSize, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 0, 50, 30));
+        jLSize.setFont(new java.awt.Font("Roboto Medium", 0, 12)); // NOI18N
+        jLSize.setForeground(new java.awt.Color(255, 255, 255));
+        jLSize.setText("Tamaño");
+        jLSize.setMaximumSize(new java.awt.Dimension(100, 15));
+        jPBotomInfo.add(jLSize, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 0, 50, 30));
 
-            jLCantidadData.setFont(new java.awt.Font("Roboto Medium", 0, 12)); // NOI18N
-            jLCantidadData.setForeground(new java.awt.Color(255, 255, 255));
-            jLCantidadData.setText("2");
-            jPBotomInfo.add(jLCantidadData, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 5, 60, 20));
+        jLCantidadData.setFont(new java.awt.Font("Roboto Medium", 0, 12)); // NOI18N
+        jLCantidadData.setForeground(new java.awt.Color(255, 255, 255));
+        jLCantidadData.setText("2");
+        jPBotomInfo.add(jLCantidadData, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 5, 60, 20));
 
-            jLabel1.setFont(new java.awt.Font("Roboto Medium", 0, 12)); // NOI18N
-            jLabel1.setForeground(new java.awt.Color(255, 255, 255));
-            jLabel1.setText("434/1000000");
-            jPBotomInfo.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 6, 100, 20));
+        jLabel1.setFont(new java.awt.Font("Roboto Medium", 0, 12)); // NOI18N
+        jLabel1.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel1.setText("434/1000000");
+        jPBotomInfo.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 6, 100, 20));
 
-            jPBack.add(jPBotomInfo, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 660, 990, 30));
+        jPBack.add(jPBotomInfo, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 660, 990, 30));
 
-            jLExit.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-            jLExit.setIcon(new javax.swing.ImageIcon(getClass().getResource("/imagenes/Close.png"))); // NOI18N
-            jLExit.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-            jLExit.addMouseListener(new java.awt.event.MouseAdapter() {
-                public void mouseClicked(java.awt.event.MouseEvent evt) {
-                    jLExitMouseClicked(evt);
-                }
-            });
-            jPBack.add(jLExit, new org.netbeans.lib.awtextra.AbsoluteConstraints(950, 10, -1, -1));
+        jLExit.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLExit.setIcon(new javax.swing.ImageIcon(getClass().getResource("/imagenes/Close.png"))); // NOI18N
+        jLExit.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        jLExit.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jLExitMouseClicked(evt);
+            }
+        });
+        jPBack.add(jLExit, new org.netbeans.lib.awtextra.AbsoluteConstraints(950, 10, -1, -1));
 
-            javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-            getContentPane().setLayout(layout);
-            layout.setHorizontalGroup(
-                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(jPBack, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            );
-            layout.setVerticalGroup(
-                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(jPBack, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            );
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+        getContentPane().setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jPBack, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jPBack, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+        );
 
-            setSize(new java.awt.Dimension(986, 690));
-            setLocationRelativeTo(null);
-        }// </editor-fold>//GEN-END:initComponents
+        setSize(new java.awt.Dimension(986, 690));
+        setLocationRelativeTo(null);
+    }// </editor-fold>//GEN-END:initComponents
 
     private void jLExitMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLExitMouseClicked
         // TODO add your handling code here:
@@ -279,17 +345,266 @@ public class Principal extends javax.swing.JFrame {
 
     private void jTFBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTFBuscarActionPerformed
         // TODO add your handling code here:
+        this.buscar();
     }//GEN-LAST:event_jTFBuscarActionPerformed
 
     private void jTree1ValueChanged(javax.swing.event.TreeSelectionEvent evt) {//GEN-FIRST:event_jTree1ValueChanged
         // TODO add your handling code here:
         DefaultMutableTreeNode nseleccionado=(DefaultMutableTreeNode) this.jTree1.getLastSelectedPathComponent();
-        if(nseleccionado!=null){
+        if (nseleccionado!=null) {
             File file= (File) nseleccionado.getUserObject();
             System.out.println(file.getId());
+            this.idNodoSeleccionado = file.getId();
+            
+            ArbolI directorio = (ArbolI) this.sistema.getDirectorio().result;
+            this.jTFRuta.setText(directorio.getRuta(file.getId()));
+           
+            SistemReturn resultado = this.sistema.getFiles(file.getId());
+            this.populateTable((Object[][]) resultado.result);
+            
+            String cantidadTexto = String.valueOf(directorio.cantidadDeElementos(file.getId()));
+            this.jLCantidadData.setText(cantidadTexto);
         }
     }//GEN-LAST:event_jTree1ValueChanged
 
+    private void jLAddMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLAddMouseClicked
+        // TODO add your handling code here:
+        if(this.idNodoSeleccionado == 0) {
+            JLabel mensaje = new JLabel("Selecciona un archivo antes");
+            mensaje.setFont(new Font("Arial", Font.BOLD, 24));
+            JOptionPane.showMessageDialog(null, mensaje);
+        }
+        else {
+            CrearPopUp popUp = new CrearPopUp(this);
+            popUp.setVisible(true);   
+        }
+    }//GEN-LAST:event_jLAddMouseClicked
+
+    private void jLTrashMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLTrashMouseClicked
+        // TODO add your handling code here:
+        if(this.idNodoSeleccionado == 0) {
+            JLabel mensaje = new JLabel("Selecciona un archivo antes");
+            mensaje.setFont(new Font("Arial", Font.BOLD, 24));
+            JOptionPane.showMessageDialog(null, mensaje);
+        }
+        else {
+            SistemReturn resultadoDelete = this.sistema.delete(this.idNodoSeleccionado);
+
+            JLabel mensaje = new JLabel(resultadoDelete.message);
+            mensaje.setFont(new Font("Arial", Font.BOLD, 24));
+            JOptionPane.showMessageDialog(null, mensaje);
+
+            ArbolI directorio = (ArbolI) this.sistema.getDirectorio().result;
+            this.populateTree(directorio);
+
+            Object[][] matriz = new Object[0][0];
+
+            this.populateTable(matriz);
+
+            String tamañoTexto = this.sistema.sizeOcuped().result.toString() + "/" + this.sistema.getTotalSize().result.toString();
+            this.jLabel1.setText(tamañoTexto);
+
+            String cantidadTexto = String.valueOf(directorio.cantidadDeElementos(this.idNodoSeleccionado));
+            this.jLCantidadData.setText(cantidadTexto);   
+        }
+    }//GEN-LAST:event_jLTrashMouseClicked
+
+    private void jLBuscarMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLBuscarMouseClicked
+        // TODO add your handling code here:
+        this.buscar();
+    }//GEN-LAST:event_jLBuscarMouseClicked
+
+    private void jLUPdateMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLUPdateMouseClicked
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jLUPdateMouseClicked
+
+    private void jTFBuscarMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTFBuscarMouseClicked
+        // TODO add your handling code here:
+        this.jTFBuscar.setText("");
+    }//GEN-LAST:event_jTFBuscarMouseClicked
+
+    private void jLRenameMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLRenameMouseClicked
+        // TODO add your handling code here:
+        if(this.idNodoSeleccionado == 0) {
+            JLabel mensaje = new JLabel("Selecciona un archivo antes");
+            mensaje.setFont(new Font("Arial", Font.BOLD, 24));
+            JOptionPane.showMessageDialog(null, mensaje);
+        }
+        else {
+            SistemReturn resultado = this.sistema.getById(this.idNodoSeleccionado);
+            NodoI nodo = (NodoI) resultado.result;
+            EditarPopUp popUp = new EditarPopUp(nodo.getData(), this);
+            popUp.setVisible(true);
+        }
+    }//GEN-LAST:event_jLRenameMouseClicked
+
+    private void jLCutMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLCutMouseClicked
+        // TODO add your handling code here:
+        if(this.idNodoSeleccionado == 0) {
+            JLabel mensaje = new JLabel("Selecciona un archivo antes");
+            mensaje.setFont(new Font("Arial", Font.BOLD, 24));
+            JOptionPane.showMessageDialog(null, mensaje);
+        }
+        else {
+            if(this.nodoCortado == null) {
+                SistemReturn nodoAcortar = this.sistema.getById(this.idNodoSeleccionado);
+            
+                if(nodoAcortar.type.equals(TypeError.OK)) {
+                    this.nodoCortado = (NodoI) nodoAcortar.result;
+                    
+                    JLabel mensaje = new JLabel("Carpeta/Documento a cortar guardado correctamente");
+                    mensaje.setFont(new Font("Arial", Font.BOLD, 24));
+                    JOptionPane.showMessageDialog(null, mensaje);
+                }   
+            }
+            else {
+                SistemReturn resultadoCortar = this.sistema.cut(this.nodoCortado.getData().getId(), this.idNodoSeleccionado);
+                
+                JLabel mensaje = new JLabel(resultadoCortar.message);
+                mensaje.setFont(new Font("Arial", Font.BOLD, 24));
+                JOptionPane.showMessageDialog(null, mensaje);
+                
+                this.nodoCortado = null;
+                
+                ArbolI directorio = (ArbolI) this.sistema.getDirectorio().result;
+                this.populateTree(directorio);
+                
+                String cantidadTexto = String.valueOf(directorio.cantidadDeElementos(this.idNodoSeleccionado));
+                this.jLCantidadData.setText(cantidadTexto);
+            }
+            
+            String tamañoTexto = this.sistema.sizeOcuped().result.toString() + "/" + this.sistema.getTotalSize().result.toString();
+            this.jLabel1.setText(tamañoTexto);
+            
+            SistemReturn resultado = this.sistema.getFiles(this.idNodoSeleccionado);
+            this.populateTable((Object[][]) resultado.result);
+        }
+    }//GEN-LAST:event_jLCutMouseClicked
+
+    private void jLCopyMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLCopyMouseClicked
+        // TODO add your handling code here:
+        if(this.idNodoSeleccionado == 0) {
+            JLabel mensaje = new JLabel("Selecciona un archivo antes");
+            mensaje.setFont(new Font("Arial", Font.BOLD, 24));
+            JOptionPane.showMessageDialog(null, mensaje);
+        }
+        else {
+            SistemReturn nodoAcopiar = this.sistema.getById(this.idNodoSeleccionado);
+                
+            if(nodoAcopiar.type.equals(TypeError.OK)) {
+                this.nodoCopiado = (NodoI) nodoAcopiar.result;
+
+                JLabel mensaje = new JLabel("Carpeta/Documento copiado");
+                mensaje.setFont(new Font("Arial", Font.BOLD, 24));
+                JOptionPane.showMessageDialog(null, mensaje);
+            } 
+        }
+    }//GEN-LAST:event_jLCopyMouseClicked
+
+    private void jLPasteMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLPasteMouseClicked
+        // TODO add your handling code here:
+        if(this.idNodoSeleccionado == 0) {
+            JLabel mensaje = new JLabel("Selecciona un archivo antes");
+            mensaje.setFont(new Font("Arial", Font.BOLD, 24));
+            JOptionPane.showMessageDialog(null, mensaje);
+        }
+        else {
+            if(this.nodoCopiado == null) {
+                JLabel mensaje = new JLabel("Copia un archivo antes");
+                mensaje.setFont(new Font("Arial", Font.BOLD, 24));
+                JOptionPane.showMessageDialog(null, mensaje);
+            }
+            else {
+                SistemReturn resultadoCopiar = this.sistema.copy(this.nodoCopiado.getData().getId(), this.idNodoSeleccionado);
+                
+                JLabel mensaje = new JLabel(resultadoCopiar.message);
+                mensaje.setFont(new Font("Arial", Font.BOLD, 24));
+                JOptionPane.showMessageDialog(null, mensaje);
+                
+                ArbolI directorio = (ArbolI) this.sistema.getDirectorio().result;
+                this.populateTree(directorio);
+                
+                String cantidadTexto = String.valueOf(directorio.cantidadDeElementos(this.idNodoSeleccionado));
+                this.jLCantidadData.setText(cantidadTexto);
+                
+                this.nodoCopiado = null;
+            }
+            
+            String tamañoTexto = this.sistema.sizeOcuped().result.toString() + "/" + this.sistema.getTotalSize().result.toString();
+            this.jLabel1.setText(tamañoTexto);
+            
+            SistemReturn resultado = this.sistema.getFiles(this.idNodoSeleccionado);
+            this.populateTable((Object[][]) resultado.result);
+        }
+    }//GEN-LAST:event_jLPasteMouseClicked
+
+    @Override
+    public void onObjectEdited(String nombre, FileType type, int size, String extension, int fileId) {
+        SistemReturn resultado = this.sistema.update(fileId, nombre, size, extension);
+        
+        if(resultado.type.equals(TypeError.ERROR1) || resultado.type.equals(TypeError.ERROR2) || resultado.type.equals(TypeError.ERROR3)) {
+            JLabel mensaje = new JLabel(resultado.message);
+            mensaje.setFont(new Font("Arial", Font.BOLD, 24));
+            JOptionPane.showMessageDialog(null, mensaje);
+        }
+        else {
+            ArbolI directorio = (ArbolI) this.sistema.getDirectorio().result;
+        
+            this.populateTree(directorio);
+
+            this.jTFRuta.setText(directorio.getRuta(this.idNodoSeleccionado));
+
+            String tamañoTexto = this.sistema.sizeOcuped().result.toString() + "/" + this.sistema.getTotalSize().result.toString();
+            this.jLabel1.setText(tamañoTexto);
+            
+            String cantidadTexto = String.valueOf(directorio.cantidadDeElementos(this.idNodoSeleccionado));
+            this.jLCantidadData.setText(cantidadTexto);
+            
+            SistemReturn resultadoTabla = this.sistema.getFiles(this.idNodoSeleccionado);
+            this.populateTable((Object[][]) resultadoTabla.result);
+        }
+    }
+    
+    @Override
+    public void onObjectCreated(String nombre, FileType type, int size, String extension) {
+        SistemReturn resultadoAdd = this.sistema.add(this.idNodoSeleccionado, nombre, type, size, extension);
+        
+        if (resultadoAdd.type.equals(TypeError.ERROR1) || resultadoAdd.type.equals(TypeError.ERROR2)) {
+            JLabel mensaje = new JLabel(resultadoAdd.message);
+            mensaje.setFont(new Font("Arial", Font.BOLD, 24));
+            JOptionPane.showMessageDialog(null, mensaje);
+        }
+        else {
+            ArbolI directorio = (ArbolI) resultadoAdd.result;
+            this.populateTree(directorio);
+            
+            SistemReturn resultado = this.sistema.getFiles(this.idNodoSeleccionado);
+            this.populateTable((Object[][]) resultado.result);
+            
+            String tamañoTexto = this.sistema.sizeOcuped().result.toString() + "/" + this.sistema.getTotalSize().result.toString();
+            this.jLabel1.setText(tamañoTexto);
+            
+            String cantidadTexto = String.valueOf(directorio.cantidadDeElementos(this.idNodoSeleccionado));
+            this.jLCantidadData.setText(cantidadTexto);
+        }
+    }
+    
+    private void buscar() {
+        String nombre = jTFBuscar.getText();
+        
+        SistemReturn resultadoSearch = this.sistema.search(nombre);
+        
+        if(resultadoSearch.type.equals(TypeError.ERROR1) || resultadoSearch.type.equals(TypeError.ERROR2)) {
+            JLabel mensaje = new JLabel(resultadoSearch.message);
+            mensaje.setFont(new Font("Arial", Font.BOLD, 24));
+            JOptionPane.showMessageDialog(null, mensaje);
+        }
+        
+        Object[][] matriz = (Object[][]) resultadoSearch.result;
+        
+        this.populateTable(matriz);
+    }
+    
     /**
      * @param args the command line arguments
      */
@@ -355,4 +670,5 @@ public class Principal extends javax.swing.JFrame {
     private javax.swing.JTable jTable1;
     private javax.swing.JTree jTree1;
     // End of variables declaration//GEN-END:variables
+
 }

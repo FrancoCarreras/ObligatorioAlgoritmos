@@ -37,5 +37,4 @@ public interface SistemaI {
     public SistemReturn totalFiles(int fileId);
     //retorna las subcarpetas y documentos de un directorio
     public SistemReturn getFiles(int fileId);
-   
 }

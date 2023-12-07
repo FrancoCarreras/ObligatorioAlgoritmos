@@ -31,8 +31,15 @@ public interface ArbolI {
     public int peso();
     //Retorna el nodo que contiene el documento o carpeta
     public NodoI buscarPorId(int fileId);
-    //retorna una matriz con los datos de los hijos del nodo dado
+    //Retorna una matriz con los datos de los hijos del nodo dado
     public Object[][] hijosDelNodo(int fieldId);
-    
-    
+    //Busca una lista de nodos por nombre
+    public Lista buscarPorNombre(Lista lista, String text);
+    public Lista listaDeNodos(NodoI nodo);
+    public void dfsAgregarALista(NodoI nodo, Lista lista);
+    public int cantidadDeElementos(int fileId);
+    public int tamañoHijos(NodoI hijo);
+    public boolean existeNodoConNombre(NodoI nodo, String nombreBuscado, FileType tipo);
+    public NodoI buscarPadre(int fieldId, NodoI nodo);
+    public NodoI copiarNodo(NodoI nodo, NodoI nodoPadreDestino);
 }
